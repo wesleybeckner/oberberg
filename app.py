@@ -66,7 +66,9 @@ def make_consolidate_plot(remove='E26', add='E27',
     go.Bar(name='Days Needed', x=final.index, y=final['Total'])
     ])
     # Change the bar mode
-    fig.update_layout(barmode='group')
+    fig.update_layout(barmode='group',
+                  yaxis=dict(title="Days"),
+                   xaxis=dict(title="Quantile"))
     fig.update_layout({
                 "plot_bgcolor": "#F9F9F9",
                 "paper_bgcolor": "#F9F9F9",
@@ -178,7 +180,8 @@ def calculate_opportunity(quantile=0.9):
             "{:.1f}".format(data.sum()[2])
 # Describe the layout/ UI of the app
 app.layout = html.Div([
-    html.H4(["Line Consolidation"]),
+    html.H4(["Untapped Potential"]),
+    html.P("Opportunity (days of additional production) is computed from distributions around uptime, yield, and rate with respect to each of the lines and their product families. Some lines perform very well (E27 and K06) and already perform near their upper quantile ranges. Other lines (K10, E28) have a lot of hidden capacity due to wide variability in their operation. The additional days of production should be interpreted as untapped potential. For instance, If all lines were to perform in their 0.82 quantile bracket, the plant would gain the equivalent of running an additional line for an entire calendar year.  "),
     html.Div([
         html.Div([
             html.H6(id='new-rev'), html.P('Total Days of Production Saved')
@@ -208,7 +211,7 @@ app.layout = html.Div([
                     min=0.51,
                     max=0.99,
                     step=0.01,
-                    value=.9,
+                    value=.82,
                     included=False,
                     className="dcc_control"),
         dcc.Graph(
@@ -233,9 +236,19 @@ app.layout = html.Div([
                 ),
             ], className='row container-display',
             ),
+    html.H4("Line Consolidation"),
+    html.P("With the given line performances there is an opportunity for "\
+            "consolidation. 'Days Needed' are computed from rate, yield and "\
+            "the total production for 'Line to Remove' in 2019. "\
+            "'Days Available' is computed from rate, yield, and uptime "\
+            "improvements in 'Line to Overload'. A manual overide is "\
+            "available to remove uptime consideration. In this case, uptime "\
+            "can be manually inputed, with a maximum value based on the "\
+            "downtime days for that line in 2019."),
     html.Div([
         html.Div([
             html.Div([
+                html.P("Line to Remove"),
                 dcc.Dropdown(id='line-in-selection',
                             options=[{'label': i, 'value': i} for i in \
                                      lines],
@@ -244,6 +257,7 @@ app.layout = html.Div([
                        id='line-in',
                     ),
             html.Div([
+                html.P("Line to Overload"),
                 dcc.Dropdown(id='line-out-selection',
                             options=[{'label': i, 'value': i} for i in \
                                      lines],
@@ -255,7 +269,8 @@ app.layout = html.Div([
                 html.P('Uptime manual overide'),
                 daq.BooleanSwitch(
                   id='daq-switch',
-                  on=False),
+                  on=False,
+                  style={"margin-bottom": "10px"}),
                 dcc.Slider(id='uptime-slider',
                             min=0,
                             max=10,
@@ -274,6 +289,13 @@ app.layout = html.Div([
                     figure=make_consolidate_plot()),
             ], className='mini_container',
             ),
+    html.H4("The Usual Suspects"),
+    html.P("Scores reflect whether a group (line or product family) is "\
+           "improving or degrading the indicated metric (uptime, rate, yield). "\
+           "While groups were determined to be statistically impactful "\
+           "(null hypothesis < 0.01) it does not guarantee decoupling. For "\
+           "instance, PSL has a very negative impact on rate and yield. "\
+           "However, the only line that runs PSL is E28, which is rated similarly."),
     html.Div([
         dcc.Graph(
                     id='scores_plot',

@@ -265,7 +265,11 @@ def make_metric_plot(line='K40', pareto='Product', marginal='rug'):
     plot = oee.loc[oee['Line'] == line]
     plot = plot.sort_values('Thickness Material A')
     plot['Thickness Material A'] = pd.to_numeric(plot['Thickness Material A'])
-    fig = px.density_contour(plot, x='Rate', y='Yield',
+    if marginal == 'none':
+        fig = px.density_contour(plot, x='Rate', y='Yield',
+                     color=pareto)
+    else:
+        fig = px.density_contour(plot, x='Rate', y='Yield',
                  color=pareto, marginal_x=marginal, marginal_y=marginal)
     fig.update_layout({
                  "plot_bgcolor": "#F9F9F9",
@@ -283,8 +287,8 @@ def make_utilization_plot():
     fig.update_layout({
                 "plot_bgcolor": "#F9F9F9",
                 "paper_bgcolor": "#F9F9F9",
-                "title": "Utilization, All Lines",
-                "height": 300,
+                "title": "Utilization, All Lines (Note: data did not distinguish between downtime and utilization)",
+                "height": 400,
     })
     return fig
 
@@ -631,11 +635,12 @@ app.layout = html.Div([
             html.Div([
                 html.P('Marginal'),
                 dcc.Dropdown(id='marginal-select',
-                             options=[{'label': 'Rug', 'value': 'rug'},
+                             options=[{'label': 'None', 'value': 'none'},
+                                    {'label': 'Rug', 'value': 'rug'},
                                      {'label': 'Box', 'value': 'box'},
                                      {'label': 'Violin', 'value': 'violin'},
                                     {'label': 'Histogram', 'value': 'histogram'}],
-                            value='rug',
+                            value='none',
                              style={'width': '120px'}),
                     ],className='mini_container',
                       id='marginal-box',
@@ -759,6 +764,7 @@ def display_sunburst_plot(clickData, toAdd, sort, select, descriptors):
         local_df = stat_df
     if descriptors != None:
         local_df = local_df.loc[local_df['descriptor'].isin(descriptors)]
+    local_df = local_df.reset_index(drop=True)
     col = local_df['descriptor'][select[0]]
     val = local_df['group'][select[0]]
     return make_sunburst_plot(clickData, toAdd, col, val)

@@ -71,14 +71,18 @@ def calculate_margin_opportunity(sort='Worst', select=[0,10], descriptors=None):
 
     new_EBIT = 1 / (new_df['Sales Quantity in KG'].sum() /
         df['Sales Quantity in KG'].sum()) * new_df['EBIT'].sum()
-    EBIT_percent = (new_EBIT - df['EBIT'].sum()) / df['EBIT'].sum() * 100
-    new_products = new_df[descriptors].sum(axis=1).unique().shape[0]
-    product_percent_reduction = (old_products - new_products) / \
-        old_products * 100
 
-    return "${:.1f} M".format(new_EBIT/1e6), "{:.01f}%".format(EBIT_percent),\
-           "{}".format(new_products), \
-           "{:.01f}%".format(product_percent_reduction)
+    EBIT_percent = (new_df['EBIT'].sum()) / df['EBIT'].sum() * 100
+    new_products = new_df[descriptors].sum(axis=1).unique().shape[0]
+    product_percent_reduction = (new_products) / \
+        old_products * 100
+    new_kg = new_df['Sales Quantity in KG'].sum()
+    old_kg = df['Sales Quantity in KG'].sum()
+    kg_percent = new_kg / old_kg * 100
+
+    return "${:.1f} M of ${:.1f} M ({:.1f}%)".format(new_df['EBIT'].sum()/1e6, df['EBIT'].sum()/1e6, EBIT_percent), \
+            "{} of {} Products ({:.1f}%)".format(new_products,old_products,product_percent_reduction),\
+            "{:.1f} M of {:.1f} M kg ({:.1f}%)".format(new_kg/1e6, old_kg/1e6, kg_percent)
 
 def make_violin_plot(sort='Worst', select=[0,10], descriptors=None):
 
@@ -453,19 +457,14 @@ app.layout = html.Div([
            id='margin-rev',
         ),
         html.Div([
-            html.H6(id='margin-new-rev-percent'), html.P('EBIT Increase')
+            html.H6(id='margin-new-rev-percent'), html.P('Unique Products')
         ], className='mini_container',
            id='margin-rev-percent',
         ),
         html.Div([
-            html.H6(id='margin-new-products'), html.P('Number of Products')
+            html.H6(id='margin-new-products'), html.P('Volume')
         ], className='mini_container',
            id='margin-products',
-        ),
-        html.Div([
-            html.H6(id='margin-new-products-percent'), html.P('Product Reduction')
-        ], className='mini_container',
-           id='margin-products-percent',
         ),
     ], className='row container-display'
     ),
@@ -807,8 +806,7 @@ def display_ebit_plot(sort, select, descriptors, switch):
 @app.callback(
     [Output('margin-new-rev', 'children'),
      Output('margin-new-rev-percent', 'children'),
-     Output('margin-new-products', 'children'),
-     Output('margin-new-products-percent', 'children')],
+     Output('margin-new-products', 'children')],
     [Input('sort', 'value'),
     Input('select', 'value'),
     Input('descriptor_dropdown', 'value')]

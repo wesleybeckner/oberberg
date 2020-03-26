@@ -136,6 +136,29 @@ body {
   flex:3;
 }
 
+#violin {
+  flex: 2;
+}
+
+#descriptorBlock {
+  flex: 2;
+}
+
+#bestOrWorstBlock {
+  flex: 1;
+}
+
+#descriptorRangeBlock {
+  flex: 1;
+}
+
+#daqSwitchBlock {
+  flex: 1;
+}
+#sunburst {
+  flex: 1;
+}
+
 #util{
   flex:2;
 }
@@ -163,6 +186,21 @@ body {
   flex: 1;
 }
 
+#margin-rev {
+  flex: 1;
+}
+
+#margin-rev-percent {
+  flex: 1;
+}
+
+#margin-products {
+  flex: 1;
+}
+
+#margin-products-percent {
+  flex: 1;
+}
 #ratio {
   flex: 1;
 }

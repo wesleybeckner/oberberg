@@ -108,11 +108,36 @@ body {
 }
 
 #pareto {
+  flex: 3;
+}
+
+#pareto-box {
   flex: 1;
 }
 
-#pie {
+#line-box {
   flex: 1;
+}
+
+#product-box {
+  flex: 1;
+}
+
+#consolidate-box {
+  flex: 2;
+}
+
+
+#pie {
+  flex: 2;
+}
+
+#opportunity{
+  flex:3;
+}
+
+#util{
+  flex:2;
 }
 
 #line-in {

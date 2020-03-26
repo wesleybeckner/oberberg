@@ -30,11 +30,58 @@ dataset = opp.sort_index()
 lines = opp.index.get_level_values(1).unique()
 asset_metrics = ['Yield', 'Rate', 'Uptime']
 groupby = ['Line', 'Product group']
-oee = pd.read_csv('data/oee.csv', index_col=0)
+oee = pd.read_csv('data/oee.csv')
 oee['From Date/Time'] = pd.to_datetime(oee["From Date/Time"])
 oee['To Date/Time'] = pd.to_datetime(oee["To Date/Time"])
 oee["Run Time"] = pd.to_timedelta(oee["Run Time"])
+oee = oee.loc[oee['Rate'] < 2500]
 res = oee.groupby(groupby)[asset_metrics].quantile(quantiles)
+
+def make_product_sunburst(lines=['E27', 'E26']):
+    fig = px.sunburst(oee.loc[oee['Line'].isin(lines)],
+        path=['Product group', 'Polymer', 'Base Type', 'Additional Treatment', 'Line'],
+        color='Line')
+    fig.update_layout({
+                 "plot_bgcolor": "#F9F9F9",
+                 "paper_bgcolor": "#F9F9F9",
+                 "height": 500,
+                 "margin": dict(
+                        l=0,
+                        r=0,
+                        b=0,
+                        t=30,
+                        pad=4
+    ),
+                 "title": "Product Overlap: {}, {}".format(lines[0], lines[1]),
+     })
+    return fig
+
+def make_metric_plot(line='K40', pareto='Product', marginal='rug'):
+    plot = oee.loc[oee['Line'] == line]
+    plot = plot.sort_values('Thickness Material A')
+    plot['Thickness Material A'] = pd.to_numeric(plot['Thickness Material A'])
+    fig = px.density_contour(plot, x='Rate', y='Yield',
+                 color=pareto, marginal_x=marginal, marginal_y=marginal)
+    fig.update_layout({
+                 "plot_bgcolor": "#F9F9F9",
+                 "paper_bgcolor": "#F9F9F9",
+                 "height": 750,
+                 "title": "{}, Pareto by {}".format(line, pareto),
+     })
+    return fig
+
+def make_utilization_plot():
+    downdays = pd.DataFrame(oee.groupby('Line')['Uptime'].sum().sort_values()/24)
+    downdays.columns = ['Unutilized Days, 2019']
+    fig = px.bar(downdays, y=downdays.index, x='Unutilized Days, 2019',
+           orientation='h', color=downdays.index)
+    fig.update_layout({
+                "plot_bgcolor": "#F9F9F9",
+                "paper_bgcolor": "#F9F9F9",
+                "title": "Utilization, All Lines",
+                "height": 300,
+    })
+    return fig
 
 def find_quantile(to_remove_line='E26', to_add_line='E27',
                   metrics=['Rate', 'Yield', 'Uptime'],
@@ -65,6 +112,11 @@ def make_consolidate_plot(remove='E26', add='E27',
     go.Bar(name='Days Available', x=final.index, y=final['Days']),
     go.Bar(name='Days Needed', x=final.index, y=final['Total'])
     ])
+    if uptime != None:
+        title = "Quantile-Performance Target: {} + {} Uptime Days"\
+            .format(quantile, uptime)
+    else:
+        title = "Quantile-Performance Target: {}".format(quantile)
     # Change the bar mode
     fig.update_layout(barmode='group',
                   yaxis=dict(title="Days"),
@@ -72,6 +124,14 @@ def make_consolidate_plot(remove='E26', add='E27',
     fig.update_layout({
                 "plot_bgcolor": "#F9F9F9",
                 "paper_bgcolor": "#F9F9F9",
+                "title": title,
+                "margin": dict(
+                       l=0,
+                       r=0,
+                       b=0,
+                       t=30,
+                       pad=4
+   ),
     })
     return fig
 
@@ -204,20 +264,25 @@ app.layout = html.Div([
            id='products-percent',
         ),
     ], className='row container-display'
+
     ),
     html.Div([
-        html.H6(id='slider-selection'),
-        dcc.Slider(id='quantile_slider',
-                    min=0.51,
-                    max=0.99,
-                    step=0.01,
-                    value=.82,
-                    included=False,
-                    className="dcc_control"),
-        dcc.Graph(
-                    id='bar_plot',
-                    figure=make_days_plot()),
-            ], className='mini_container',
+        html.Div([
+            html.H6(id='slider-selection'),
+            dcc.Slider(id='quantile_slider',
+                        min=0.51,
+                        max=0.99,
+                        step=0.01,
+                        value=.82,
+                        included=False,
+                        className="dcc_control"),
+            dcc.Graph(
+                        id='bar_plot',
+                        figure=make_days_plot()),
+                ], className='mini_container',
+                    id='opportunity',
+                ),
+            ], className='row container-display',
             ),
     html.Div([
         html.Div([
@@ -235,6 +300,59 @@ app.layout = html.Div([
                    id='pie',
                 ),
             ], className='row container-display',
+            ),
+    html.H4("Rate, Yield, & Uptime"),
+    html.Div([
+        html.Div([
+            html.Div([
+                html.P('Line'),
+                dcc.Dropdown(id='line-select',
+                             options=[{'label': i, 'value': i} for i in \
+                                        lines],
+                            value='K40',
+                             style={'width': '100px'}),
+                     ],  className='mini_container',
+                         id='line-box',
+                     ),
+            html.Div([
+                html.P('Pareto'),
+                dcc.Dropdown(id='pareto-select',
+                             options=[{'label': 'Thickness', 'value': 'Thickness Material A'},
+                                     {'label': 'Product', 'value': 'Product'}],
+                            value='Product',
+                             style={'width': '120px'}),
+                    ],className='mini_container',
+                      id='pareto-box',
+                    ),
+            html.Div([
+                html.P('Marginal'),
+                dcc.Dropdown(id='marginal-select',
+                             options=[{'label': 'Rug', 'value': 'rug'},
+                                     {'label': 'Box', 'value': 'box'},
+                                     {'label': 'Violin', 'value': 'violin'},
+                                    {'label': 'Histogram', 'value': 'histogram'}],
+                            value='rug',
+                             style={'width': '120px'}),
+                    ],className='mini_container',
+                      id='marginal-box',
+                    ),
+            ], className='row container-display',
+            ),
+        ],
+        ),
+    html.Div([
+        dcc.Graph(
+                    id='metric-plot',
+                    figure=make_metric_plot()),
+            ], className='mini_container',
+                id='metric',
+            ),
+    html.Div([
+        dcc.Graph(
+                    id='utilization_plot',
+                    figure=make_utilization_plot()),
+            ], className='mini_container',
+                id='util',
             ),
     html.H4("Line Consolidation"),
     html.P("With the given line performances there is an opportunity for "\
@@ -283,12 +401,25 @@ app.layout = html.Div([
                     ),
                 ], className='row container-display',
                 ),
-            html.H6(id='quantile-target'),
-        dcc.Graph(
-                    id='consolidate_plot',
-                    figure=make_consolidate_plot()),
-            ], className='mini_container',
-            ),
+        ],
+        ),
+        html.Div([
+            html.Div([
+                dcc.Graph(
+                            id='consolidate_plot',
+                            figure=make_consolidate_plot()),
+                    ], className='mini_container',
+                        id='consolidate-box',
+                    ),
+            html.Div([
+                dcc.Graph(
+                            id='product-sunburst',
+                            figure=make_product_sunburst()),
+                    ], className='mini_container',
+                        id='product-box',
+                    ),
+                ], className='row container-display',
+                ),
     html.H4("The Usual Suspects"),
     html.P("Scores reflect whether a group (line or product family) is "\
            "improving or degrading the indicated metric (uptime, rate, yield). "\
@@ -308,6 +439,15 @@ app.layout = html.Div([
     )
 
 app.config.suppress_callback_exceptions = False
+
+@app.callback(
+    Output('metric-plot', 'figure'),
+    [Input('line-select', 'value'),
+    Input('pareto-select', 'value'),
+    Input('marginal-select', 'value')]
+)
+def display_opportunity(line, pareto, marginal):
+    return make_metric_plot(line, pareto, marginal)
 
 @app.callback(
     [Output('new-rev', 'children'),
@@ -352,21 +492,30 @@ def display_click_data(inline, outline, switch, uptime):
         return make_consolidate_plot(inline, outline)
 
 @app.callback(
-    Output('quantile-target', 'children'),
+    Output('product-sunburst', 'figure'),
     [Input('line-in-selection', 'value'),
-     Input('line-out-selection', 'value'),
-     Input('daq-switch', 'on'),
-     Input('uptime-slider', 'value')]
+     Input('line-out-selection', 'value')]
      )
-def display_click_data(inline, outline, switch, uptime):
-    if switch == True:
-        quantile, final = find_quantile(inline, outline, ['Rate', 'Yield'],
-                    uptime)
-        return "Quantile-Performance Target: {} + {} Uptime Days"\
-            .format(quantile, uptime)
-    else:
-        quantile, final = find_quantile(inline, outline)
-        return "Quantile-Performance Target: {}".format(quantile)
+def display_click_data(inline, outline):
+    lines = [inline, outline]
+    return make_product_sunburst(lines)
+
+# @app.callback(
+#     Output('quantile-target', 'children'),
+#     [Input('line-in-selection', 'value'),
+#      Input('line-out-selection', 'value'),
+#      Input('daq-switch', 'on'),
+#      Input('uptime-slider', 'value')]
+#      )
+# def display_click_data(inline, outline, switch, uptime):
+#     if switch == True:
+#         quantile, final = find_quantile(inline, outline, ['Rate', 'Yield'],
+#                     uptime)
+#         return "Quantile-Performance Target: {} + {} Uptime Days"\
+#             .format(quantile, uptime)
+#     else:
+#         quantile, final = find_quantile(inline, outline)
+#         return "Quantile-Performance Target: {}".format(quantile)
 
 @app.callback(
     Output('pareto_plot', 'figure'),

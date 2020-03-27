@@ -42,7 +42,8 @@ df = pd.read_csv('data/products.csv')
 descriptors = df.columns[:8]
 production_df = df
 production_df['product'] = production_df[descriptors[2:]].agg('-'.join, axis=1)
-production_df = production_df.sort_values(['Product Family', 'EBIT'], ascending=False)
+production_df = production_df.sort_values(['Product Family', 'EBIT'],
+                                          ascending=False)
 
 stat_df = pd.read_csv('data/category_stats.csv')
 old_products = df[descriptors].sum(axis=1).unique().shape[0]
@@ -80,9 +81,12 @@ def calculate_margin_opportunity(sort='Worst', select=[0,10], descriptors=None):
     old_kg = df['Sales Quantity in KG'].sum()
     kg_percent = new_kg / old_kg * 100
 
-    return "${:.1f} M of ${:.1f} M ({:.1f}%)".format(new_df['EBIT'].sum()/1e6, df['EBIT'].sum()/1e6, EBIT_percent), \
-            "{} of {} Products ({:.1f}%)".format(new_products,old_products,product_percent_reduction),\
-            "{:.1f} M of {:.1f} M kg ({:.1f}%)".format(new_kg/1e6, old_kg/1e6, kg_percent)
+    return "${:.1f} M of ${:.1f} M ({:.1f}%)".format(new_df['EBIT'].sum()/1e6,
+                df['EBIT'].sum()/1e6, EBIT_percent), \
+            "{} of {} Products ({:.1f}%)".format(new_products,old_products,
+                product_percent_reduction),\
+            "{:.1f} M of {:.1f} M kg ({:.1f}%)".format(new_kg/1e6, old_kg/1e6,
+                kg_percent)
 
 def make_violin_plot(sort='Worst', select=[0,10], descriptors=None):
 
@@ -97,8 +101,8 @@ def make_violin_plot(sort='Worst', select=[0,10], descriptors=None):
     for index in range(select[0],select[1]):
         x = df.loc[(df[local_df.iloc[index]['descriptor']] == \
             local_df.iloc[index]['group'])]['EBIT']
-        y = local_df.iloc[index]['descriptor'] + ': ' + df.loc[(df[local_df.iloc\
-            [index]['descriptor']] == local_df.iloc[index]['group'])]\
+        y = local_df.iloc[index]['descriptor'] + ': ' + df.loc[(df[local_df\
+            .iloc[index]['descriptor']] == local_df.iloc[index]['group'])]\
             [local_df.iloc[index]['descriptor']]
         name = 'EBIT: {:.0f}, {}'.format(x.median(),
             local_df.iloc[index]['group'])
@@ -142,10 +146,12 @@ def make_sunburst_plot(clickData=None, toAdd=None, col=None, val=None):
 
 def make_ebit_plot(production_df, select=None, sort='Worst', descriptors=None):
     families = production_df['Product Family'].unique()
-    colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
+    colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3',\
+              '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
     colors_cycle = cycle(colors)
     grey = ['#7f7f7f']
-    color_dic = {'{}'.format(i): '{}'.format(j) for i, j  in zip(families, colors)}
+    color_dic = {'{}'.format(i): '{}'.format(j) for i, j  in zip(families,
+                                                                 colors)}
     grey_dic =  {'{}'.format(i): '{}'.format('#7f7f7f') for i in families}
     fig = go.Figure()
 
@@ -163,7 +169,8 @@ def make_ebit_plot(production_df, select=None, sort='Worst', descriptors=None):
             )
 
     elif select != None:
-        color_dic = {'{}'.format(i): '{}'.format(j) for i, j  in zip(select, colors)}
+        color_dic = {'{}'.format(i): '{}'.format(j) for i, j  in zip(select,
+                                                                     colors)}
         for data in px.scatter(
                 production_df,
                 x='product',
@@ -186,8 +193,8 @@ def make_ebit_plot(production_df, select=None, sort='Worst', descriptors=None):
         if descriptors != None:
             local_df = local_df.loc[local_df['descriptor'].isin(descriptors)]
         for index in select:
-            x = production_df.loc[(production_df[local_df.iloc[index]['descriptor']] == \
-                local_df.iloc[index]['group'])]
+            x = production_df.loc[(production_df[local_df.iloc[index]\
+                ['descriptor']] == local_df.iloc[index]['group'])]
             x['color'] = next(colors_cycle) # for line shapes
             new_df = pd.concat([new_df, x])
             new_df = new_df.reset_index(drop=True)
@@ -215,7 +222,6 @@ def make_ebit_plot(production_df, select=None, sort='Worst', descriptors=None):
                            'line':dict(
                                dash="dot",
                                color=new_df['color'][index],)})
-                               # color=color_dic[new_df['Product Family'][index]])})
         fig.update_layout(shapes=shapes)
     fig.update_layout({
             "plot_bgcolor": "#F9F9F9",
@@ -228,8 +234,10 @@ def make_ebit_plot(production_df, select=None, sort='Worst', descriptors=None):
 def calculate_overlap(lines=['E27', 'E26']):
     path=['Product group', 'Polymer', 'Base Type', 'Additional Treatment']
 
-    line1 = oee.loc[oee['Line'].isin([lines[0]])].groupby(path)['Quantity Good'].sum()
-    line2 = oee.loc[oee['Line'].isin([lines[1]])].groupby(path)['Quantity Good'].sum()
+    line1 = oee.loc[oee['Line'].isin([lines[0]])].groupby(path)\
+                    ['Quantity Good'].sum()
+    line2 = oee.loc[oee['Line'].isin([lines[1]])].groupby(path)\
+                    ['Quantity Good'].sum()
 
     set1 = set(line1.index)
     set2 = set(line2.index)
@@ -243,7 +251,8 @@ def calculate_overlap(lines=['E27', 'E26']):
 
 def make_product_sunburst(lines=['E27', 'E26']):
     fig = px.sunburst(oee.loc[oee['Line'].isin(lines)],
-        path=['Product group', 'Polymer', 'Base Type', 'Additional Treatment', 'Line'],
+        path=['Product group', 'Polymer', 'Base Type', 'Additional Treatment',\
+                'Line'],
         color='Line')
     overlap = calculate_overlap(lines)
     fig.update_layout({
@@ -257,7 +266,8 @@ def make_product_sunburst(lines=['E27', 'E26']):
                         t=30,
                         pad=4
     ),
-                 "title": "Product Overlap {:.1f}%: {}, {}".format(overlap, lines[0], lines[1]),
+                 "title": "Product Overlap {:.1f}%: {}, {}".format(overlap,
+                                                            lines[0], lines[1]),
      })
     return fig
 
@@ -287,7 +297,8 @@ def make_utilization_plot():
     fig.update_layout({
                 "plot_bgcolor": "#F9F9F9",
                 "paper_bgcolor": "#F9F9F9",
-                "title": "Utilization, All Lines (Note: data did not distinguish between downtime and utilization)",
+                "title": "Utilization, All Lines (Note: data did not "\
+                        "distinguish between downtime and utilization)",
                 "height": 400,
     })
     return fig
@@ -298,11 +309,13 @@ def find_quantile(to_remove_line='E26', to_add_line='E27',
     to_remove_kg = annual_operating.loc[to_remove_line]['Quantity Good']
     to_remove_rates = res.loc[to_remove_line].unstack()['Rate']
     to_remove_yields = res.loc[to_remove_line].unstack()['Yield']
-    target_days_needed = pd.DataFrame(to_remove_kg).values / to_remove_yields / to_remove_rates / 24
+    target_days_needed = pd.DataFrame(to_remove_kg).values / to_remove_yields\
+                            / to_remove_rates / 24
     target_days_needed = target_days_needed.T
     target_days_needed['Total'] = target_days_needed.sum(axis=1)
 
-    target_data = opportunity.loc['Additional Days', to_add_line].unstack()[metrics].sum(axis=1)
+    target_data = opportunity.loc['Additional Days', to_add_line].unstack()\
+                    [metrics].sum(axis=1)
     target = pd.DataFrame(target_data).T
     target.index=['Days']
     target = target.T
@@ -349,7 +362,8 @@ def pareto_product_family(quantile=0.9, clickData=None):
         line = clickData["points"][0]["y"]
     else:
         line = 'K40'
-    data = opportunity.reorder_levels([0,2,1,3]).loc['Additional Days', quantile, line]
+    data = opportunity.reorder_levels([0,2,1,3]).sort_index().\
+            loc['Additional Days', quantile, line]
     total = data.sum().sum()
     cols = data.columns
     bar_fig = []
@@ -383,7 +397,8 @@ def pareto_product_family(quantile=0.9, clickData=None):
     return figure
 
 def make_days_plot(quantile=0.9):
-    data = opportunity.reorder_levels([0,2,1,3]).sort_index().loc['Additional Days', quantile].groupby('Line').sum()
+    data = opportunity.reorder_levels([0,2,1,3]).sort_index()\
+                .loc['Additional Days', quantile].groupby('Line').sum()
     cols = ['Rate', 'Yield', 'Uptime']
     data['Total'] = data.sum(axis=1)
     data = data.sort_values(by='Total')
@@ -433,7 +448,8 @@ def pie_line(clickData=None):
         line = 'K40'
     data = annual_operating.loc[line]
     total = data['Net Quantity Produced'].sum()/1e6
-    fig = px.pie(data, values='Net Quantity Produced', names=data.index, title='Production distribution 2019 ({:.1f}M kg)'.format(total))
+    fig = px.pie(data, values='Net Quantity Produced', names=data.index,
+                title='Production distribution 2019 ({:.1f}M kg)'.format(total))
     fig.update_layout({
                 "plot_bgcolor": "#F9F9F9",
                 "paper_bgcolor": "#F9F9F9",
@@ -441,7 +457,8 @@ def pie_line(clickData=None):
     return fig
 
 def calculate_opportunity(quantile=0.9):
-    data = opportunity.reorder_levels([0,2,1,3]).sort_index().loc['Additional Days', quantile].groupby('Line').sum()
+    data = opportunity.reorder_levels([0,2,1,3]).sort_index()\
+                .loc['Additional Days', quantile].groupby('Line').sum()
     data['Total'] = data.sum(axis=1)
     return "{:.1f}".format(data.sum()[3]), \
             "{:.1f}".format(data.sum()[0]), \
@@ -450,10 +467,14 @@ def calculate_opportunity(quantile=0.9):
 # Describe the layout/ UI of the app
 
 app.layout = html.Div([
-    html.H4(["Product Characterization"]),
-    html.P("Product descriptors are sorted by best or worst EBIT medians. Selecting these descriptors automatically computes annualized EBIT"),
-    html.P("Use case I: If Gendorf were to ONLY produce products described by the top 10 descriptors they would increase their EBIT by 430% and reduce their product portfolio by 93%. Conversely, in eliminating the worst 10 descriptors EBIT would increase by 99% and the product portfolio would be reduced by 23%."),
-    html.P("Use Case II: I see that Base Type 459/01 is a 'Good' product descriptor. However I'm curious if it describes a single product family. I select this descriptor in the violin plot to update the sunburst plot, I see that this describes Cooling Tower, Other Technical, and Construction products. The sunburst plot also tells me that the majority of this EBIT gain is focused in the Coolin Tower products. If I use the range slider in the violin plot to only include this descriptor in the annualized EBIT calculation I see that to construct a product portfolio with only these products I would increase EBIT by 70%"),
+    html.H3(["Margin Analysis"]),
+    html.P("Product descriptors are sorted by best or worst EBIT medians. "\
+        "Selecting these descriptors automatically computes annualized EBIT. "\
+        "For example, selecting the best 10 descriptors accounts for 102% of "\
+        "the annual EBIT, 7% of available products, and 19% of the total "\
+        "production volume. Conversely, eliminating the 10 worst descriptor "\
+        "products results in a remaining product portfolio that accounts for "\
+        "168% of EBIT, 77% of products, and 84% of volume."),
     html.Div([
         html.Div([
             html.H6(id='margin-new-rev'), html.P('EBIT')
@@ -473,8 +494,6 @@ app.layout = html.Div([
     ], className='row container-display'
     ),
     html.Div([
-        # html.P('Sort product descriptors by selecting (best) products for '\
-        #     'portfolio or eliminating (worst) products from portfolio'),
         html.Div([
             html.P('Descriptors'),
             dcc.Dropdown(id='descriptor_dropdown',
@@ -550,8 +569,33 @@ app.layout = html.Div([
                     figure=make_ebit_plot(production_df)),
             ], className='mini_container',
             ),
-    html.H4(["Asset Capability"]),
-    html.P("Opportunity (days of additional production) is computed from distributions around uptime, yield, and rate with respect to each of the lines and their product families. Some lines perform very well (E27 and K06) and already perform near their upper quantile ranges. Other lines (K10, E28) have a lot of hidden capacity due to wide variability in their operation. The additional days of production should be interpreted as untapped potential. For instance, If all lines were to perform in their 0.82 quantile bracket, the plant would gain the equivalent of running an additional line for an entire calendar year.  "),
+    html.H3(["Asset Performance"]),
+    html.H4("The Usual Suspects"),
+    html.P("Scores reflect whether a group (line or product family) is "\
+           "improving or degrading the indicated metric (uptime, rate, yield). "\
+           "While groups were determined to be statistically impactful "\
+           "(null hypothesis < 0.01) it does not guarantee decoupling. For "\
+           "instance, PSL has a very negative impact on rate and yield. "\
+           "However, the only line that runs PSL is E28, which is rated similarly."),
+    html.Div([
+        dcc.Graph(
+                    id='scores_plot',
+                    figure=make_culprits()),
+        html.Pre(id='slider-data'),
+        html.Pre(id='click-data'),
+            ], className='mini_container',
+            ),
+    html.H4(["Opportunity"]),
+    html.P("Opportunity (days of additional production) is computed from "\
+            "distributions around uptime, yield, and rate with respect to "\
+            "each of the lines and their product families. Some lines perform "\
+            "very well (E27 and K06) and already perform near their upper "\
+            "quantile ranges. Other lines (K10, E28) have a lot of hidden "\
+            "capacity due to wide variability in their operation. The "\
+            "additional days of production should be interpreted as untapped "\
+            "potential. For instance, If all lines were to perform in their "\
+            "0.82 quantile bracket, the plant would gain the equivalent of "\
+            "running an additional line for an entire calendar year.  "),
     html.Div([
         html.Div([
             html.H6(id='new-rev'), html.P('Total Days of Production Saved')
@@ -729,21 +773,6 @@ app.layout = html.Div([
                     ),
                 ], className='row container-display',
                 ),
-    html.H4("The Usual Suspects"),
-    html.P("Scores reflect whether a group (line or product family) is "\
-           "improving or degrading the indicated metric (uptime, rate, yield). "\
-           "While groups were determined to be statistically impactful "\
-           "(null hypothesis < 0.01) it does not guarantee decoupling. For "\
-           "instance, PSL has a very negative impact on rate and yield. "\
-           "However, the only line that runs PSL is E28, which is rated similarly."),
-    html.Div([
-        dcc.Graph(
-                    id='scores_plot',
-                    figure=make_culprits()),
-        html.Pre(id='slider-data'),
-        html.Pre(id='click-data'),
-            ], className='mini_container',
-            ),
     ], className='pretty container'
     )
 
